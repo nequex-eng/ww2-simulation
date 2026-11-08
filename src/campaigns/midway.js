@@ -39,3 +39,51 @@ export function resolveMidwayStrike({contact,enemyReadiness,turn,day,hour}) {
   const hits=(roll1<chance?1:0)+(roll2<chance*.32?1:0);
   return {chance,hits};
 }
+
+export function resolveMidwayPlayerOrder(id,state,side="us",lang="zh") {
+  const s={...state,sectorCoverage:[...(state.sectorCoverage||[18,18,18,18])]};
+  const patch={};
+  let message="";
+  let scoreDelta=0;
+  if(id==="search"){
+    const gain=Math.max(12,Math.floor(((s.crew||0)+(s.fuel||0))/10));
+    s.sectorCoverage[s.searchSector]=Math.min(100,s.sectorCoverage[s.searchSector]+gain);
+    patch.sectorCoverage=s.sectorCoverage;
+    patch.search=Math.round(s.sectorCoverage.reduce((x,y)=>x+y,0)/4);
+    const onBearing=s.searchSector===(side==="us"?0:1);
+    patch.contact=Math.min(96,(s.contact||0)+(onBearing?Math.floor(s.sectorCoverage[s.searchSector]/9)+Math.floor(gain/2):1));
+    patch.fuel=Math.max(0,(s.fuel||0)-7);
+    patch.crew=Math.max(0,(s.crew||0)-3);
+    message=lang==="zh"?(onBearing?"重点扇区巡逻取得更完整接触线索，但目标身份仍待确认。":"巡逻机扩大了搜索范围，但当前扇区并非主要预判方向，尚无可靠接触。"):(onBearing?"Patrols in the priority sector improve the contact picture, though target identity remains unconfirmed.":"Search coverage expands, but this is not the priority bearing; no reliable contact yet.");
+  } else if(id==="concentrate"){
+    patch.fuel=Math.max(0,(s.fuel||0)-4);patch.crew=Math.min(100,(s.crew||0)+4);patch.deckCycle=Math.max(s.deckCycle||0,1);scoreDelta=5;
+    message=lang==="zh"?"攻击编队开始协调，灵活性有所下降。":"Strike groups are coordinating; flexibility is reduced.";
+  } else if(id==="strike"){
+    patch.strikeLaunched=true;
+    const launched=Math.min(s.aircraft||0,Math.max(18,Math.floor((s.aircraft||0)*((s.contact||0)>=65?.34:.22))));
+    patch.aircraft=Math.max(0,(s.aircraft||0)-launched);patch.airborne=(s.airborne||0)+launched;patch.sorties=(s.sorties||0)+1;patch.deckCycle=3;patch.fuel=Math.max(0,(s.fuel||0)-12);
+    const {hits}=resolveMidwayStrike({contact:s.contact||0,enemyReadiness:s.enemyReadiness||0,turn:s.turn||0,day:s.day||0,hour:s.hour||0});
+    patch.enemyCarriers=Math.max(0,(s.enemyCarriers||0)-hits);scoreDelta=hits>0?hits*9:-5;patch.contact=Math.max(10,(s.contact||0)-24);
+    message=lang==="zh"?"攻击机群已经出动，效果取决于情报准确性与敌方防御。":"Strike aircraft launched; results depend on contact accuracy and enemy readiness.";
+  } else if(id==="hold"){
+    patch.search=Math.min(100,(s.search||0)+10);scoreDelta=3;
+    message=lang==="zh"?"舰队暂缓行动，等待更可靠报告。":"Fleet holds while awaiting stronger reports.";
+  } else if(id==="defend"){
+    patch.defenseReady=true;patch.crew=Math.min(100,(s.crew||0)+8);patch.deckCycle=Math.max(s.deckCycle||0,1);patch.fuel=Math.max(0,(s.fuel||0)-5);
+    message=lang==="zh"?"战斗空中巡逻加强，舰队防御改善。":"Combat air patrol strengthened; fleet defence improves.";
+  } else if(id==="island"){
+    const launched=Math.min(s.aircraft||0,Math.max(12,Math.floor((s.aircraft||0)*.12)));
+    patch.aircraft=Math.max(0,(s.aircraft||0)-launched);patch.airborne=(s.airborne||0)+launched;patch.sorties=(s.sorties||0)+1;patch.deckCycle=2;patch.fuel=Math.max(0,(s.fuel||0)-10);
+    message=lang==="zh"?"继续攻击中途岛，舰队防空力量暂时减少。":"Attack on Midway continues; carrier defence is temporarily reduced.";
+  } else if(id==="rearm"){
+    patch.deckVulnerable=true;patch.deckCycle=3;patch.fuel=Math.max(0,(s.fuel||0)-8);scoreDelta=2;
+    message=lang==="zh"?"飞机重新挂弹与加油，甲板调度期间较为脆弱。":"Aircraft rearming and refuelling; deck cycle creates vulnerability.";
+  } else if(id==="reserve"){
+    patch.deckVulnerable=false;patch.deckCycle=Math.max(s.deckCycle||0,1);patch.crew=Math.min(100,(s.crew||0)+2);scoreDelta=4;
+    message=lang==="zh"?"保留攻击预备队，等待更明确的接触报告。":"Reserve strike retained while awaiting clearer reports.";
+  } else if(id==="withdraw"){
+    patch.done=true;scoreDelta=-3;
+    message=lang==="zh"?"舰队向西脱离接触，放弃眼前目标。":"Force disengages west, abandoning the immediate objective.";
+  }
+  return {patch,message,scoreDelta};
+}
