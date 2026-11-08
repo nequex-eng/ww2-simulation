@@ -87,3 +87,27 @@ export function resolveMidwayPlayerOrder(id,state,side="us",lang="zh") {
   }
   return {patch,message,scoreDelta};
 }
+
+export function resolveMidwayStandingOrder(order,state,side="us",lang="zh") {
+  if(!order?.active)return {patch:{},narrative:""};
+  const s={...state,sectorCoverage:[...(state.sectorCoverage||[18,18,18,18])]};
+  const patch={};
+  let narrative="";
+  if(order.action==="search"){
+    const gain=5;s.sectorCoverage[s.searchSector]=Math.min(100,s.sectorCoverage[s.searchSector]+gain);
+    patch.sectorCoverage=s.sectorCoverage;patch.search=Math.round(s.sectorCoverage.reduce((x,y)=>x+y,0)/4);
+    const priority=s.searchSector===(side==="us"?0:1);patch.contact=Math.min(96,(s.contact||0)+(priority?3:1));
+    patch.fuel=Math.max(0,(s.fuel||0)-2);patch.crew=Math.max(0,(s.crew||0)-1);
+    narrative=lang==="zh"?"持续侦察命令执行：巡逻机继续搜索当前扇区。":"Standing reconnaissance order continues in the selected sector.";
+  } else if(order.action==="defend"){
+    patch.defenseReady=true;patch.fuel=Math.max(0,(s.fuel||0)-2);patch.crew=Math.max(0,(s.crew||0)-1);
+    narrative=lang==="zh"?"持续防空命令执行：战斗空中巡逻保持警戒。":"Standing defensive order continues; combat air patrol remains active.";
+  } else if(order.action==="hold"){
+    patch.contact=Math.max(5,(s.contact||0)-1);
+    narrative=lang==="zh"?"舰队继续保持待命，等待新的情报。":"Fleet continues to hold while awaiting intelligence.";
+  } else if(["concentrate","rearm","reserve"].includes(order.action)){
+    patch.crew=Math.min(100,(s.crew||0)+1);
+    narrative=lang==="zh"?"持续战备命令执行：航空队保持编组与准备状态。":"Standing readiness order maintains air-group preparation.";
+  }
+  return {patch,narrative};
+}
