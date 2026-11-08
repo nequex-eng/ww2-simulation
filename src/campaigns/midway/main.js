@@ -53,7 +53,7 @@ $("#start")?.addEventListener("click",()=>document.querySelector(".choose").scro
 document.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>{selected=b.dataset.order;render();});
 $("#cycle-sector")?.addEventListener("click",()=>{searchSector=(searchSector+1)%4;save();render();});
 $("#issue")?.addEventListener("click",()=>order(selected));
-$("#submit-free-order")?.addEventListener("click",submitNaturalOrder);$("#clear-agent-chat")?.addEventListener("click",()=>{logs=[];agentBrief=null;agentRisk="";agentQuestion="";agentInterpreted="";agentConfidence="";enemyLastReport="";orderDraft="";if(world)world.agentMemory={};save();render();});
+$("#submit-free-order")?.addEventListener("click",submitNaturalOrder);$("#clear-agent-chat")?.addEventListener("click",()=>{logs=[];reports=[{name:T().reports[0][0],body:T().reports[0][1],confidence:T().reports[0][2]}];agentBrief=null;agentRisk="";agentQuestion="";agentInterpreted="";agentConfidence="";enemyLastReport="";orderDraft="";if(world)world.agentMemory={};save();render();});
 $("#cancel-standing-order")?.addEventListener("click",()=>{standingOrder=null;save();render();});
 $("#free-order")?.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter")submitNaturalOrder();});
 $("#advance")?.addEventListener("click",()=>advanceWithAgents());
