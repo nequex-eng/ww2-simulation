@@ -14,6 +14,7 @@ export function createWorldState({campaignId="midway",side="us",clock={day:3,hou
     commandHistory:[],
     events:[],
     agentMemory:{playerCommander:[],staff:[],enemyCommander:[]},
+    standingOrders:[],
     lastUpdatedAt:null
   };
 }
@@ -68,4 +69,20 @@ export function worldSnapshot(world) {
     commandHistory:world.commandHistory.slice(0,8),
     events:world.events.slice(0,10)
   };
+}
+
+export function setStandingOrders(world,orders=[]) {
+  const next=structuredClone(world);
+  next.standingOrders=(Array.isArray(orders)?orders:[]).slice(0,8).map((order,index)=>({
+    id:String(order.id||"standing-"+index).slice(0,80),
+    type:String(order.type||order.action||"").slice(0,40),
+    objective:String(order.objective||order.text||"").slice(0,500),
+    active:order.active!==false,
+    issuedAt:order.issuedAt||null
+  }));
+  return next;
+}
+
+export function clearStandingOrders(world) {
+  return setStandingOrders(world,[]);
 }
