@@ -36,11 +36,21 @@ function fallbackEvaluation(mission,plan,lang,player){
  return {assessment,outcome,status:"partial",experience:strong?2:moderate?1:0,trustDelta:0,memory:zh?"任务提交成功；因模型超时，系统以保守规则完成部分评估，仍需补充风险分析、独立来源与具体行动。":"Assignment submitted; model timed out, so a conservative fallback recorded a partial assessment.",nextLead,model:"fallback-rule-evaluator",evaluationMode:"timeout_fallback"};
 }
 export async function onRequestPost({request,env}){
- if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED"},503);
  let x;try{const raw=await request.text();if(raw.length>10000)return json({error:"REQUEST_TOO_LARGE"},413);x=JSON.parse(raw)}catch{return json({error:"INVALID_JSON"},400)}
  const mission=missionById(clean(x.missionId,60));if(!mission)return json({error:"UNKNOWN_MISSION"},404);
  const plan=clean(x.plan,1800);if(!plan.trim())return json({error:"EMPTY_PLAN"},400);
  const lang=x.lang==="en"?"en":"zh",p=x.player||{};
+ // A direct factual query about the 1923 Munich putsch is a valid field inquiry,
+ // not a failed investigation plan. Answer and archive it without depending on model availability.
+ if(mission.id==="munich-report-1923"&&/(死了多少|多少人死亡|死亡人数|伤亡人数|多少人遇难|how many (people )?(were )?killed|death toll|casualties)/i.test(plan)){
+  const zh=lang==="zh";
+  return json({ok:true,missionId:mission.id,year:mission.year,status:"partial",experience:3,trustDelta:1,evaluationMode:"verified_fact_answer",
+   assessment:zh?"这次慕尼黑啤酒馆政变通常统计为20人死亡。常见概括是16名纳粹政变参与者与4名巴伐利亚警察；更细的史料拆分指出，冲突现场有13名政变者、1名旁观平民和4名警察死亡，另有2名政变参与者在其他地点死亡。":"The Beer Hall Putsch is commonly reported to have caused 20 deaths. A common summary gives 16 Nazi participants and 4 Bavarian police; a more detailed breakdown records 13 putschists, 1 civilian bystander and 4 police killed at the main clash, plus 2 putschists killed elsewhere.",
+   outcome:zh?"问题已回答并归档。这是对事件规模的有效核查问题，因此获得少量调查经验；但它尚未完成整项任务要求的组织能力与政治影响评估。不同资料对旁观平民的归类略有差异，故应同时保留总数与统计口径。":"Question answered and filed. This is a valid inquiry into the scale of the event and earns limited investigation XP, but it does not complete the broader assessment of organization and political impact. Sources classify the civilian bystander differently, so preserve both the total and the counting method.",
+   memory:zh?"核实1923年慕尼黑啤酒馆政变伤亡：通常统计20人死亡；需注意不同史料对旁观平民的分类口径。":"Verified the 1923 Beer Hall Putsch death toll: commonly 20; sources differ in how they classify the civilian bystander.",
+   nextLead:zh?"继续调查政变组织者如何计划夺取巴伐利亚权力、为何未能获得警察与军方支持，以及失败后纳粹运动如何调整策略。":"Investigate how the plotters planned to seize power in Bavaria, why police and military support failed to materialize, and how the movement adapted after the failed coup."});
+ }
+ if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED"},503);
  const careerFocus={
  diplomat:"Focus on diplomatic channels, negotiation, official statements and political relationships.",
  journalist:"Focus on source verification, interviews, public reporting and distinguishing propaganda from evidence.",
