@@ -27,3 +27,13 @@ Cloudflare Pages build command: `npm run build`; output directory: `dist`.
 - National WWII Museum — Battle of Midway: https://www.nationalww2museum.org/war/articles/battle-midway
 
 This remains an educational prototype, not a validated operational wargame. The map is schematic and not to scale. Historical milestones are reference events; carrier losses and command effects are simplified game mechanics, not a validated reconstruction of the battle.
+
+
+## AI operations staff
+
+The command phase calls a server-side Cloudflare Pages Function at `/api/adjudicate`. It uses the MiniMax OpenAI-compatible Chat Completions endpoint; the API key remains server-side in the `MINIMAX_API_KEY` secret. Optional environment variables:
+
+- `MINIMAX_MODEL`: model ID (defaults to `MiniMax-M3`)
+- `MINIMAX_BASE_URL`: full Chat Completions URL (defaults to `https://api.minimax.io/v1/chat/completions`)
+
+The model generates contextual command narration and uncertain intelligence reports only. Deterministic game code remains authoritative for aircraft, fuel, readiness, time, carrier counts, and score. If the model is unavailable, the campaign continues with the built-in rule-based feedback.
