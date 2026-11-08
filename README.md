@@ -5,7 +5,9 @@ Bilingual English / Chinese historical decision simulation prototype.
 ## Features
 - U.S. and Imperial Japanese command perspectives
 - Time-responsive Pacific operational plot showing both carrier forces and search coverage (schematic, not to scale)
-- Sector-based reconnaissance coverage (north, northeast, east, south), with selectable patrol focus and independent coverage accumulation\n- Contact quality, flight-cycle status, airborne aircraft and sortie counts passed into AI staff briefings\n- Intelligence reports with confidence labels
+- Sector-based reconnaissance coverage (north, northeast, east, south), with selectable patrol focus and independent coverage accumulation
+- Contact quality, flight-cycle status, airborne aircraft and sortie counts passed into AI staff briefings
+- Intelligence reports with confidence labels
 - Command orders with state changes, time advancement, and side-specific consequences
 - Separate friendly and enemy operational carrier counts, affected by strike timing, rearming vulnerability, and defensive orders
 - Historical milestone intelligence from 4–7 June, displayed separately from simulated outcomes
