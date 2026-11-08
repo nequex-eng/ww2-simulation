@@ -3,6 +3,38 @@ const json=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{"content
 const clean=(v,n=1400)=>String(v??"").replace(/[<>]/g,"").slice(0,n);
 function contentOf(message){const v=message?.content||message?.reasoning_content||message?.output_text||"";return Array.isArray(v)?v.map(x=>typeof x==="string"?x:x?.text||"").join(" "):typeof v==="string"?v:JSON.stringify(v)}
 function parseObject(text){const s=String(text||"").trim();try{return JSON.parse(s)}catch{}const match=s.match(/\{[\s\S]*\}/);if(match){try{return JSON.parse(match[0])}catch{}}return null}
+function fallbackEvaluation(mission,plan,lang,player){
+ const text=String(plan||"");
+ const checks=[
+  /(安全|军事|军备|边界|法国|德国|security|military|arms|border)/i.test(text),
+  /(经济|贸易|赔偿|债务|工业|通货|economic|trade|reparations|debt|industry)/i.test(text),
+  /(政治|民族|民意|政权|联盟|政治|political|national|public opinion|league)/i.test(text),
+  /(核实|查证|交叉|独立来源|档案|使馆|报纸|访问|询问|verify|corroborat|source|archive|embassy|interview)/i.test(text),
+  /(下一步|随后|计划|行动|联系|调查|比较|确认|next step|then|plan|contact|investigate|compare)/i.test(text)
+ ];
+ const score=checks.filter(Boolean).length;
+ const strong=score>=4;
+ const moderate=score>=2;
+ const zh=lang==="zh";
+ const assessment=zh
+  ? (strong
+    ? "模型响应超时，以下为系统保守兜底评估：报告已提出多个风险维度，并包含来源核查或后续行动，方向基本符合任务要求。但尚未经过模型逐项审阅，不能视为完整评估。"
+    : moderate
+      ? "模型响应超时，以下为系统保守兜底评估：报告包含部分风险或调查思路，但对安全、经济、政治风险的覆盖，以及独立来源、可核查对象和具体行动仍不充分。"
+      : "模型响应超时，以下为系统保守兜底评估：目前报告主要表达了谨慎态度或初步立场，尚未形成可执行的分析。仅说自己刚进入联络系统，不能替代对任务本身的判断。")
+  : (strong
+    ? "The model timed out. This conservative fallback finds several risk dimensions and verification or follow-up actions, but this is not a full model review."
+    : moderate
+      ? "The model timed out. The report contains some risk or investigative thinking, but coverage, independent sourcing and concrete actions remain incomplete."
+      : "The model timed out. The report states an initial position but does not yet provide an actionable assessment. A cautious attitude alone does not answer the assignment.");
+ const outcome=zh
+  ? "已保存为“部分完成（系统兜底评估）”。本次没有获得 MiniMax 的完整评估，因此不把推测当作事实，也不授予完整任务经验。"
+  : "Filed as partial using the system fallback. MiniMax did not complete its review, so no unsupported claims are treated as facts and full mission XP is not awarded.";
+ const nextLead=zh
+  ? "补充三类风险：法国的安全保障与德国军力限制、赔偿与欧洲经济恢复、民族自决与新边界争议。每类至少列出一个1919年可接触的独立信息来源、一项需要核实的事实，以及下一步联系或调查行动。"
+  : "Address security guarantees and German military limits; reparations and European recovery; and self-determination and disputed borders. For each, name an independent source available in 1919, a fact to verify and a concrete next action.";
+ return {assessment,outcome,status:"partial",experience:strong?2:moderate?1:0,trustDelta:0,memory:zh?"任务提交成功；因模型超时，系统以保守规则完成部分评估，仍需补充风险分析、独立来源与具体行动。":"Assignment submitted; model timed out, so a conservative fallback recorded a partial assessment.",nextLead,model:"fallback-rule-evaluator",evaluationMode:"timeout_fallback"};
+}
 export async function onRequestPost({request,env}){
  if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED"},503);
  let x;try{const raw=await request.text();if(raw.length>10000)return json({error:"REQUEST_TOO_LARGE"},413);x=JSON.parse(raw)}catch{return json({error:"INVALID_JSON"},400)}
@@ -38,5 +70,13 @@ export async function onRequestPost({request,env}){
    out={assessment:plain,outcome:weak?"这份答复表达了谨慎态度，但尚未形成可执行的评估方案。缺少具体风险判断、核查对象、信息来源和下一步行动。":"报告内容已记录，但模型未能提供完整结构化评分。系统暂按部分完成处理，不把未明确证明的判断视为事实。",status:"partial",experience:weak?0:2,trustDelta:0,memory:"提交了1919年战后秩序评估；本次按保守规则记录，仍需补充可核查的调查步骤。",nextLead:"分别列出安全、经济和政治风险，并为每项风险指定1919年可接触的独立来源与核查步骤。"};
   }
   return json({ok:true,missionId:mission.id,year:mission.year,assessment:clean(out.assessment,900),outcome:clean(out.outcome,1200),status:["success","partial","failed"].includes(out.status)?out.status:"partial",experience:Math.max(0,Math.min(12,Math.floor(Number(out.experience)||0))),trustDelta:Math.max(-2,Math.min(3,Number(out.trustDelta)||0)),memory:clean(out.memory,700),nextLead:clean(out.nextLead,700),model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash"});
- }catch(e){return json({error:e?.name==="AbortError"?"MODEL_TIMEOUT":"MODEL_UNAVAILABLE",detail:clean(e?.message||"Unknown model error",220)},502)}finally{clearTimeout(timer)}
+ }catch(e){
+  if(e?.name==="AbortError"){
+   console.error("MISSION_MODEL_TIMEOUT",JSON.stringify({missionId:mission.id,model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash"}));
+   const fallback=fallbackEvaluation(mission,plan,lang,p);
+   return json({ok:true,missionId:mission.id,year:mission.year,...fallback,model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash",warning:"MODEL_TIMEOUT_FALLBACK"});
+  }
+  console.error("MISSION_MODEL_UNAVAILABLE",clean(e?.message||"Unknown model error",220));
+  return json({error:"MODEL_UNAVAILABLE",detail:clean(e?.message||"Unknown model error",220)},502);
+ }finally{clearTimeout(timer)}
 }
