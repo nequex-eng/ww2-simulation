@@ -33,17 +33,20 @@ This remains an educational prototype, not a validated operational wargame. The 
 
 ## AI operations staff
 
-The command phase calls a server-side Cloudflare Pages Function at `/api/adjudicate`. It uses the MiniMax OpenAI-compatible Chat Completions endpoint; the API key remains server-side in the `MINIMAX_API_KEY` secret. Optional environment variables:
+Natural-language command execution calls the server-side Cloudflare Pages Function at `/api/agents`. The endpoint makes three independent MiniMax model requests in parallel. The API key remains server-side in the `MINIMAX_API_KEY` secret.
+
+- **Order interpreter:** maps the commander's free-form instruction to one legal order from the active campaign registry.
+- **Friendly staff:** evaluates only the player's known state and intelligence, then provides an assessment, recommendation, risk, and question.
+- **Enemy commander:** chooses an adversarial action from its own force state and observed player activity. It does not receive the player's private force and resource values.
+
+The older `/api/adjudicate` endpoint remains available for the manual-order fallback. Optional environment variables:
 
 - `MINIMAX_MODEL`: model ID (defaults to `MiniMax-M3.1-Flash`)
 - `MINIMAX_BASE_URL`: full Chat Completions URL (defaults to `https://api.minimax.io/v1/chat/completions`)
 
-The model generates contextual command narration and uncertain intelligence reports only. Deterministic game code remains authoritative for aircraft, fuel, readiness, time, carrier counts, and score. If the model is unavailable, the campaign continues with the built-in rule-based feedback.
-
-
 ## Campaign-agnostic simulation architecture (v1)
 
-The project now introduces a reusable simulation kernel in `src/engine/kernel.js`. It defines a versioned world state, validated order types, command history, simulation clock, event ledger, and separate agent memory. Campaign-specific rules remain outside this kernel so future theaters can register their own forces, maps, orders, and historical data.
+The project now introduces a reusable simulation kernel in `src/engine/kernel.js`. It defines a versioned world state, validated order types, command history, simulation clock, event ledger, and separate agent memory. The shared campaign registry lives in `shared/campaigns.js`; Midway-specific combat adjudication is being moved into `src/campaigns/midway.js`. Future theaters can add their own adapters without rewriting the common agent and world-state services.
 
 The `/api/agents` endpoint runs three distinct model roles in parallel:
 
@@ -53,4 +56,4 @@ The `/api/agents` endpoint runs three distinct model roles in parallel:
 
 The browser validates the interpreted order against campaign-legal commands. The deterministic simulation layer adjudicates resource and force effects; model text does not directly set losses or rewrite world state. Agent outputs and command events are retained in the local campaign state. The original button controls remain as a fallback while the natural-language command path is introduced.
 
-This is the first migration slice, not yet a complete multi-theater engine. The next work is to move Midway-specific state transitions into a campaign adapter, remove scripted historical outcomes from live adjudication, and add a continuous event/decision loop shared by all campaign modules.
+This is the first working migration slice, not yet a complete multi-theater engine. Historical milestones remain reference reports only; they no longer force carrier losses in the live simulation. Further work is to move the remaining Midway player-order rules into the campaign adapter, expand the event scheduler, and make campaign modules plug into the same continuous decision loop.
