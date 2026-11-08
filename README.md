@@ -6,8 +6,10 @@ Bilingual English / Chinese historical decision simulation prototype.
 - U.S. and Imperial Japanese command perspectives
 - Schematic Pacific operational plot
 - Intelligence reports with confidence labels
-- Command orders with state changes and time advancement
-- Local campaign persistence (browser localStorage)
+- Command orders with state changes, time advancement, and side-specific consequences
+- Separate friendly and enemy operational carrier counts
+- Historical milestone intelligence from 4–7 June, displayed separately from simulated outcomes
+- Local campaign persistence and restoration (browser localStorage)
 - After-action comparison with the historical record
 
 ## Local development
@@ -24,4 +26,4 @@ Cloudflare Pages build command: `npm run build`; output directory: `dist`.
 - U.S. Naval History and Heritage Command — Battle of Midway: https://www.history.navy.mil/browse-by-topic/wars-conflicts-and-operations/world-war-ii/1942/midway.html
 - National WWII Museum — Battle of Midway: https://www.nationalww2museum.org/war/articles/battle-midway
 
-This is an educational prototype, not a validated operational wargame. Map positions are schematic and simulated outcomes are not historical claims.
+This remains an educational prototype, not a validated operational wargame. The map is schematic and not to scale. Historical milestones are reference events; carrier losses and command effects are simplified game mechanics, not a validated reconstruction of the battle.
