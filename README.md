@@ -18,3 +18,14 @@ Historical figures have biographies, offices, political positions, personalities
 
 ## Development
 `npm install`, `npm run dev`, `npm run build`.
+
+## Historical character model
+
+- Browser requests use `POST /api/character`; the model key never enters the browser bundle.
+- `MINIMAX_API_KEY` is a Cloudflare Pages production secret.
+- Default China-region OpenAI-compatible endpoint: `https://api.minimaxi.com/v1/chat/completions`.
+- Set optional `MINIMAX_BASE_URL` to the full Chat Completions URL when using another region (for example `https://api.minimax.io/v1/chat/completions`).
+- Set optional `MINIMAX_MODEL` to a model available to the key; default is `MiniMax-M3.1-Flash`.
+- `GET /api/character` reports whether the runtime has the key configured without exposing it.
+- Each historical figure receives their own profile, agenda, year-specific role, event context, relationship score and isolated memory. The model generates dialogue and leads; the client applies validated relationship and career changes.
+- The UI checks the runtime connection before a live audience. A missing key or provider error does not grant experience or relationship changes.
