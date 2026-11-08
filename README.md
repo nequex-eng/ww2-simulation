@@ -33,7 +33,7 @@ This remains an educational prototype, not a validated operational wargame. The 
 
 The command phase calls a server-side Cloudflare Pages Function at `/api/adjudicate`. It uses the MiniMax OpenAI-compatible Chat Completions endpoint; the API key remains server-side in the `MINIMAX_API_KEY` secret. Optional environment variables:
 
-- `MINIMAX_MODEL`: model ID (defaults to `MiniMax-M3`)
+- `MINIMAX_MODEL`: model ID (defaults to `MiniMax-M3.1-Flash`)
 - `MINIMAX_BASE_URL`: full Chat Completions URL (defaults to `https://api.minimax.io/v1/chat/completions`)
 
 The model generates contextual command narration and uncertain intelligence reports only. Deterministic game code remains authoritative for aircraft, fuel, readiness, time, carrier counts, and score. If the model is unavailable, the campaign continues with the built-in rule-based feedback.
