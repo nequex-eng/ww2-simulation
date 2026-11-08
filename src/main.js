@@ -42,7 +42,8 @@ $("#language").onclick=()=>{lang=lang==="zh"?"en":"zh";localStorage.lang=lang;re
 document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{page=b.dataset.page;render();});
 document.querySelectorAll("[data-side]").forEach(b=>b.onclick=()=>begin(b.dataset.side));
 $("#start")?.addEventListener("click",()=>document.querySelector(".choose").scrollIntoView({behavior:"smooth"}));
-document.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>{selected=b.dataset.order;render();});\n$("#cycle-sector")?.addEventListener("click",()=>{searchSector=(searchSector+1)%4;save();render();});
+document.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>{selected=b.dataset.order;render();});
+$("#cycle-sector")?.addEventListener("click",()=>{searchSector=(searchSector+1)%4;save();render();});
 $("#issue")?.addEventListener("click",()=>order(selected));
 $("#advance")?.addEventListener("click",()=>{advance();render();});
 $("#new")?.addEventListener("click",()=>{localStorage.removeItem("midway");side="";page="home";render();});
