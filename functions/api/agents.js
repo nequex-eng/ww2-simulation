@@ -19,7 +19,8 @@ export async function onRequestGet({env}){return json({ready:Boolean(env.MINIMAX
 export async function onRequestPost({request,env}){
  if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED"},503);
  let input;try{const raw=await request.text();if(raw.length>18000)return json({error:"REQUEST_TOO_LARGE"},413);input=JSON.parse(raw);}catch{return json({error:"INVALID_JSON"},400);}
- const lang=input.lang==="en"?"en":"zh",side=input.side==="jp"?"jp":"us",enemy=side==="us"?"jp":"us";\n const campaign=getCampaign(clean(input.campaignId,40)||"midway");if(!campaign)return json({error:"UNKNOWN_CAMPAIGN"},404);const sides=campaign.sides,orders=campaign.orders;
+ const lang=input.lang==="en"?"en":"zh",side=input.side==="jp"?"jp":"us",enemy=side==="us"?"jp":"us";
+ const campaign=getCampaign(clean(input.campaignId,40)||"midway");if(!campaign)return json({error:"UNKNOWN_CAMPAIGN"},404);const sides=campaign.sides,orders=campaign.orders;
  const message=clean(input.message,1200);if(!message.trim())return json({error:"EMPTY_ORDER"},400);
  const state=input.state&&typeof input.state==="object"?input.state:{};
  const knownReports=Array.isArray(input.knownReports)?input.knownReports.slice(0,8).map(x=>({title:clean(x.title,100),body:clean(x.body,350),confidence:clean(x.confidence,20)})):[];
