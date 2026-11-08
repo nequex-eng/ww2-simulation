@@ -30,9 +30,10 @@ function fallbackEvaluation(mission,plan,lang,player){
  const outcome=zh
   ? "已保存为“部分完成（系统兜底评估）”。本次没有获得 MiniMax 的完整评估，因此不把推测当作事实，也不授予完整任务经验。"
   : "Filed as partial using the system fallback. MiniMax did not complete its review, so no unsupported claims are treated as facts and full mission XP is not awarded.";
+ const wartimeLead=mission.year>=1940;
  const nextLead=zh
-  ? "补充三类风险：法国的安全保障与德国军力限制、赔偿与欧洲经济恢复、民族自决与新边界争议。每类至少列出一个1919年可接触的独立信息来源、一项需要核实的事实，以及下一步联系或调查行动。"
-  : "Address security guarantees and German military limits; reparations and European recovery; and self-determination and disputed borders. For each, name an independent source available in 1919, a fact to verify and a concrete next action.";
+  ? (wartimeLead?"按你的职业补充一项可核实的战时判断、一项资源或权限限制、一个独立信息来源，以及下一步可执行行动。不要把后来战局结果写成当时已知事实；对伤亡和战果数字注明来源与统计口径。":"补充三类风险：法国的安全保障与德国军力限制、赔偿与欧洲经济恢复、民族自决与新边界争议。每类至少列出一个1919年可接触的独立信息来源、一项需要核实的事实，以及下一步联系或调查行动。")
+  : (wartimeLead?"Add one verifiable wartime judgment, one resource or authority constraint, one independent source, and one concrete next action suited to your career. Do not present later outcomes as contemporary knowledge; attribute casualty and battle figures.":"Address security guarantees and German military limits; reparations and European recovery; and self-determination and disputed borders. For each, name an independent source available in 1919, a fact to verify and a concrete next action.");
  return {assessment,outcome,status:"partial",experience:strong?2:moderate?1:0,trustDelta:0,memory:zh?"任务提交成功；因模型超时，系统以保守规则完成部分评估，仍需补充风险分析、独立来源与具体行动。":"Assignment submitted; model timed out, so a conservative fallback recorded a partial assessment.",nextLead,model:"fallback-rule-evaluator",evaluationMode:"timeout_fallback"};
 }
 export async function onRequestPost({request,env}){
@@ -52,17 +53,18 @@ export async function onRequestPost({request,env}){
  }
  if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED"},503);
  const careerFocus={
- diplomat:"Focus on diplomatic channels, negotiation, official statements and political relationships.",
- journalist:"Focus on source verification, interviews, public reporting and distinguishing propaganda from evidence.",
- analyst:"Focus on evidence assessment, uncertainty, alternative hypotheses and intelligence gaps.",
- officer:"Focus on military organization, logistics, mobilization and realistic command authority.",
- industrialist:"Focus on trade, finance, industrial capacity, shipping and material constraints."
+ diplomat:"Focus on coalition diplomacy, negotiation, official policy, alliance friction, occupation arrangements and political consequences. Evaluate what a junior or mid-level diplomatic officer could realistically report or coordinate.",
+ journalist:"Focus on independently verified reporting, interviews, civilian conditions, censorship, propaganda and public accountability. Do not reward sensational claims without attribution.",
+ analyst:"Focus on source reliability, competing hypotheses, uncertainty, order of battle only where available, strategic indicators and intelligence gaps.",
+ officer:"Focus on command authority, operational coordination, logistics, force readiness, communications, casualties and realistic military responsibilities. Do not let a junior liaison officer issue orders to national armies.",
+ industrialist:"Focus on production capacity, shipping, fuel, raw materials, labor, finance, convoy losses, bottlenecks and civilian supply. Assess feasibility rather than treating resources as unlimited."
  };
  const focus=careerFocus[clean(p.career,40)]||careerFocus.analyst;
+ const wartimeCareerRule=mission.year>=1940?"This is a global-war assignment. Assess the player according to their actual career, rank and plausible access. Do not require every career to perform intelligence analysis: diplomats coordinate policy, journalists verify and report, analysts weigh evidence, officers coordinate within command authority, and industrial advisers assess production and logistics. Reward concrete, period-appropriate actions and honest uncertainty.":"This is a prewar assignment. Assess the player according to their actual career and plausible access.";
  const system=lang==="zh"
  ?"【语言硬性要求】所有面向玩家的字段 assessment、outcome、memory、nextLead 必须使用简体中文；即使玩家输入很短，也不得改用英文。你是严谨的历史职业任务裁决官。玩家是虚构的历史参与者，正在完成一项真实历史背景中的职业任务。只允许使用任务年份及之前能够获得的信息；严格遵守人物当时的职位、技术、通信、交通、权限和情报条件。玩家不能改变公开历史事件、条约或战争结果，只能改变自己的报告质量、人脉、声誉与职业成长。必须评估证据质量、行动可行性、风险意识和历史认知边界。不得凭空制造机密文件、现代设备或未来知识。输出JSON：{assessment:评估, outcome:任务结果, status:success|partial|failed, experience:0到12整数, trustDelta:-2到3整数, memory:个人履历记忆, nextLead:下一条调查线索}。"
- :"You adjudicate a historical career assignment for a fictional participant. Use only information available in the mission year or earlier. Respect the historical offices, technology, communications, travel, authority and intelligence limits of the period. The player cannot change public historical events, treaties or war outcomes; only their report quality, contacts, reputation and career may change. Evaluate evidence quality, feasibility, risk awareness and historical discipline. Never invent secret files, modern tools or future knowledge. Return JSON {assessment,outcome,status:success|partial|failed,experience:0..12 integer,trustDelta:-2..3 integer,memory,nextLead}.";
- const context={mission:{id:mission.id,year:mission.year,title:mission.title[lang],place:mission.place,briefing:mission.briefing[lang],objective:mission.objective[lang],constraints:mission.constraints[lang],knownFacts:mission.facts},player:{name:clean(p.name,48),career:clean(p.career,50),nation:clean(p.nation,80),city:clean(p.city,80),rank:clean(p.title,60),experience:Number(p.experience)||0,trust:Number(p.trust)||0},careerFocus:focus,plan};
+ :"You adjudicate a historical career assignment for a fictional participant. Use only information available in the mission year or earlier. Respect the historical offices, technology, communications, travel, authority and intelligence limits of the period. The player cannot change public historical events, treaties or war outcomes; only their report quality, contacts, reputation and career may change. Evaluate evidence quality, feasibility, risk awareness and historical discipline. Never invent secret files, modern tools or future knowledge. For wartime assignments, assess the player within their stated career and rank; do not demand the same actions from a journalist, diplomat, analyst, officer and industrial adviser. Return JSON {assessment,outcome,status:success|partial|failed,experience:0..12 integer,trustDelta:-2..3 integer,memory,nextLead}.";
+ const context={mission:{id:mission.id,year:mission.year,title:mission.title[lang],place:mission.place,briefing:mission.briefing[lang],objective:mission.objective[lang],constraints:mission.constraints[lang],knownFacts:mission.facts},player:{name:clean(p.name,48),career:clean(p.career,50),nation:clean(p.nation,80),city:clean(p.city,80),rank:clean(p.title,60),experience:Number(p.experience)||0,trust:Number(p.trust)||0},careerFocus:focus,careerRule:wartimeCareerRule,plan};
  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
  try{
   const r=await fetch(env.MINIMAX_BASE_URL||"https://api.minimaxi.com/v1/chat/completions",{method:"POST",signal:ctl.signal,headers:{"Authorization":"Bearer "+env.MINIMAX_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash",messages:[{role:"system",content:system+"\nReturn one valid JSON object only."},{role:"user",content:JSON.stringify(context)}],temperature:.25,max_completion_tokens:2400})});
