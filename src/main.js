@@ -53,7 +53,8 @@ $("#start")?.addEventListener("click",()=>document.querySelector(".choose").scro
 document.querySelectorAll("[data-order]").forEach(b=>b.onclick=()=>{selected=b.dataset.order;render();});
 $("#cycle-sector")?.addEventListener("click",()=>{searchSector=(searchSector+1)%4;save();render();});
 $("#issue")?.addEventListener("click",()=>order(selected));
-$("#submit-free-order")?.addEventListener("click",submitNaturalOrder);\n$("#cancel-standing-order")?.addEventListener("click",()=>{standingOrder=null;save();render();});
+$("#submit-free-order")?.addEventListener("click",submitNaturalOrder);
+$("#cancel-standing-order")?.addEventListener("click",()=>{standingOrder=null;save();render();});
 $("#free-order")?.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter")submitNaturalOrder();});
 $("#advance")?.addEventListener("click",()=>advanceWithAgents());
 $("#new")?.addEventListener("click",()=>{localStorage.removeItem("midway");side="";page="home";render();});
