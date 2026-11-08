@@ -12,7 +12,7 @@ export function createIdentity({name="Alex",career="analyst",nation="United King
 export function advanceIdentity(identity,{experience=0,trust=0,contact=null,mission=null,figureId=null,relationshipDelta=0}={}) {
  const next={...identity,relationships:{...(identity.relationships||{})},trainingCompleted:[...(identity.trainingCompleted||[])],experience:Math.max(0,(identity.experience||0)+experience),trust:Math.max(0,Math.min(100,(identity.trust||0)+trust)),memory:[...(identity.memory||[])].slice(-11)};
  if(contact&&!next.contacts.includes(contact))next.contacts=[...next.contacts,contact].slice(-20);
- if(figureId)next.relationships[figureId]=Math.max(-10,Math.min(100,(next.relationships[figureId]||0)+trust));
+ if(figureId)next.relationships[figureId]=Math.max(-10,Math.min(100,(next.relationships[figureId]||0)+relationshipDelta));
  if(mission)next.missions=[...(next.missions||[]),mission].slice(-20);
  const rank=next.experience>=120?4:next.experience>=70?3:next.experience>=35?2:next.experience>=12?1:0;
  next.rank=rank;
