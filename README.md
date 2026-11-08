@@ -46,7 +46,7 @@ The older `/api/adjudicate` endpoint remains available for the manual-order fall
 
 ## Campaign-agnostic simulation architecture (v1)
 
-The project now introduces a reusable simulation kernel in `src/engine/kernel.js`. It defines a versioned world state, validated order types, command history, simulation clock, event ledger, and separate agent memory. The shared campaign registry lives in `shared/campaigns.js`; Midway-specific combat adjudication is being moved into `src/campaigns/midway.js`. Future theaters can add their own adapters without rewriting the common agent and world-state services.
+The project now introduces a reusable simulation kernel in `src/engine/kernel.js`. It defines a versioned world state, validated order types, command history, simulation clock, event ledger, and separate agent memory. The shared campaign registry lives in `shared/campaigns.js`; Midway-specific player-order and enemy-action adjudication lives in `src/campaigns/midway.js`. Future theaters can add their own adapters without rewriting the common agent and world-state services.
 
 The `/api/agents` endpoint runs three distinct model roles in parallel:
 
