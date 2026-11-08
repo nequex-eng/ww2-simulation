@@ -1,6 +1,6 @@
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const clean=(v,n=800)=>String(v??"").replace(/[<>]/g,"").slice(0,n);
-import {getCampaign} from "../../../../shared/campaigns.js";
+import {getCampaign} from "../../../../src/campaigns/midway/manifest.js";
 const schemas={
  interpreter:{action:"one allowed command id",objective:"short objective",confidence:"high|medium|low",clarification:"empty or one short clarification"},
  staff:{assessment:"what is known and unknown",recommendation:"a concise recommendation",risk:"main risk",question:"one question the commander should consider"},
