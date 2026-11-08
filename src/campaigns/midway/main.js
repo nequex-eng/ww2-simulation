@@ -55,7 +55,7 @@ $("#cycle-sector")?.addEventListener("click",()=>{searchSector=(searchSector+1)%
 $("#issue")?.addEventListener("click",()=>order(selected));
 $("#submit-free-order")?.addEventListener("click",submitNaturalOrder);$("#clear-agent-chat")?.addEventListener("click",()=>{logs=[];reports=[{name:T().reports[0][0],body:T().reports[0][1],confidence:T().reports[0][2]}];agentBrief=null;agentRisk="";agentQuestion="";agentInterpreted="";agentConfidence="";enemyLastReport="";orderDraft="";if(world)world.agentMemory={};save();render();});
 $("#cancel-standing-order")?.addEventListener("click",()=>{standingOrder=null;save();render();});
-$("#free-order")?.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter")submitNaturalOrder();});
+$("#free-order")?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();submitNaturalOrder();}});
 $("#advance")?.addEventListener("click",()=>advanceWithAgents());
 $("#new")?.addEventListener("click",()=>{localStorage.removeItem("midway");side="";page="home";render();});
 }
