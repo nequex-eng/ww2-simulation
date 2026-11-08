@@ -1,6 +1,6 @@
 import "./styles.css";
 import {createWorldState,recordCommand,advanceWorldClock,rememberAgent,addWorldEvent,setStandingOrders} from "../../engine/kernel.js";
-import {getCampaign} from "../../../shared/campaigns.js";
+import {getCampaign} from "./manifest.js";
 import {resolveMidwayEnemyAction,resolveMidwayPlayerOrder,resolveMidwayStandingOrder} from "./rules.js";
 const $=s=>document.querySelector(s);
 const dict={
