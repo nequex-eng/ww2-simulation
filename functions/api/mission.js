@@ -1,8 +1,8 @@
 import {missionById} from "../../shared/missions.js";
 const json=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const clean=(v,n=1400)=>String(v??"").replace(/[<>]/g,"").slice(0,n);
-function contentOf(message){const v=message?.content??message?.reasoning_content??message?.output_text??"";return Array.isArray(v)?v.map(x=>typeof x==="string"?x:x?.text||"").join("\\n"):typeof v==="string"?v:JSON.stringify(v)}
-function parseObject(text){const s=String(text||"").replace(/^\\s*\\x60{3}(?:json)?\\s*/i,"").replace(/\\s*\\x60{3}\\s*$/,"").trim();try{return JSON.parse(s)}catch{}let start=-1,depth=0,quoted=false,escape=false;for(let i=0;i<s.length;i++){const c=s[i];if(start<0){if(c==="{"){start=i;depth=1}continue}if(quoted){if(escape)escape=false;else if(c==="\\\\")escape=true;else if(c==='"')quoted=false;continue}if(c==='"')quoted=true;else if(c==="{")depth++;else if(c==="}"&&--depth===0){try{return JSON.parse(s.slice(start,i+1))}catch{return null}}}return null}
+function contentOf(message){const v=message?.content??message?.reasoning_content??message?.output_text??"";return Array.isArray(v)?v.map(x=>typeof x==="string"?x:x?.text||"").join(" "):typeof v==="string"?v:JSON.stringify(v)}
+function parseObject(text){const s=String(text||"").trim();try{return JSON.parse(s)}catch{}const match=s.match(/\{[\s\S]*\}/);if(match){try{return JSON.parse(match[0])}catch{}}return null}
 export async function onRequestPost({request,env}){
  if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED"},503);
  let x;try{const raw=await request.text();if(raw.length>10000)return json({error:"REQUEST_TOO_LARGE"},413);x=JSON.parse(raw)}catch{return json({error:"INVALID_JSON"},400)}
