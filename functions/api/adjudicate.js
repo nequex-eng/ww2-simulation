@@ -24,7 +24,13 @@ export async function onRequestPost({request,env}){
     crew:Math.max(0,Math.min(100,Number(state.crew)||0)),
     search:Math.max(0,Math.min(100,Number(state.search)||0)),
     score:Math.max(-100,Math.min(100,Number(state.score)||0)),
-    turn:Math.max(0,Math.min(100,Number(state.turn)||0)),\n    contact:Math.max(0,Math.min(100,Number(input.operationalDetail?.contact)||0)),\n    deckCycle:Math.max(0,Math.min(12,Number(input.operationalDetail?.deckCycle)||0)),\n    airborne:Math.max(0,Math.min(500,Number(input.operationalDetail?.airborne)||0)),\n    sorties:Math.max(0,Math.min(100,Number(input.operationalDetail?.sorties)||0)),\n    activeSector:clean(input.operationalDetail?.activeSector,30),\n    sectorCoverage:Array.isArray(input.operationalDetail?.sectorCoverage)?input.operationalDetail.sectorCoverage.slice(0,4).map(v=>Math.max(0,Math.min(100,Number(v)||0))):[]
+    turn:Math.max(0,Math.min(100,Number(state.turn)||0)),
+    contact:Math.max(0,Math.min(100,Number(input.operationalDetail?.contact)||0)),
+    deckCycle:Math.max(0,Math.min(12,Number(input.operationalDetail?.deckCycle)||0)),
+    airborne:Math.max(0,Math.min(500,Number(input.operationalDetail?.airborne)||0)),
+    sorties:Math.max(0,Math.min(100,Number(input.operationalDetail?.sorties)||0)),
+    activeSector:clean(input.operationalDetail?.activeSector,30),
+    sectorCoverage:Array.isArray(input.operationalDetail?.sectorCoverage)?input.operationalDetail.sectorCoverage.slice(0,4).map(v=>Math.max(0,Math.min(100,Number(v)||0))):[]
   };
   const command={id,label:clean(input.command?.label,100),description:clean(input.command?.description,260)};
   const events=Array.isArray(input.recentEvents)?input.recentEvents.slice(0,4).map(x=>clean(x,180)):[];
