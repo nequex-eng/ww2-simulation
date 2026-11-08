@@ -1,6 +1,7 @@
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const clean=(v,n=500)=>String(v??"").replace(/[<>]/g,"").slice(0,n);
-export async function onRequestGet({env}){return json({provider:"MiniMax",ready:Boolean(env.MINIMAX_API_KEY),model:env.MINIMAX_MODEL||"MiniMax-M3",purpose:"campaign-adjudication"});}
+export async function onRequestGet({env}){return json({provider:"MiniMax",ready:Boolean(env.MINIMAX_API_KEY),model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash",
+        reasoning_effort:"low",purpose:"campaign-adjudication"});}
 export async function onRequestPost({request,env}){
   if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED",message:"AI model key is not available to this deployment."},503);
   let input;
@@ -39,7 +40,7 @@ export async function onRequestPost({request,env}){
       method:"POST",signal:controller.signal,
       headers:{"Authorization":"Bearer "+env.MINIMAX_API_KEY,"Content-Type":"application/json"},
       body:JSON.stringify({
-        model:env.MINIMAX_MODEL||"MiniMax-M3",
+        model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash",
         messages:[{role:"system",content:system},{role:"user",content:user}],
         temperature:0.65,max_completion_tokens:420
       })
