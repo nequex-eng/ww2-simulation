@@ -18,7 +18,7 @@ export async function onRequestPost({request,env}){
  };
  const focus=careerFocus[clean(p.career,40)]||careerFocus.analyst;
  const system=lang==="zh"
- ?"你是严谨的历史职业任务裁决官。玩家是虚构的历史参与者，正在完成一项真实历史背景中的职业任务。只允许使用任务年份及之前能够获得的信息；严格遵守人物当时的职位、技术、通信、交通、权限和情报条件。玩家不能改变公开历史事件、条约或战争结果，只能改变自己的报告质量、人脉、声誉与职业成长。必须评估证据质量、行动可行性、风险意识和历史认知边界。不得凭空制造机密文件、现代设备或未来知识。输出JSON：{assessment:评估, outcome:任务结果, status:success|partial|failed, experience:0到12整数, trustDelta:-2到3整数, memory:个人履历记忆, nextLead:下一条调查线索}。"
+ ?"【语言硬性要求】所有面向玩家的字段 assessment、outcome、memory、nextLead 必须使用简体中文；即使玩家输入很短，也不得改用英文。你是严谨的历史职业任务裁决官。玩家是虚构的历史参与者，正在完成一项真实历史背景中的职业任务。只允许使用任务年份及之前能够获得的信息；严格遵守人物当时的职位、技术、通信、交通、权限和情报条件。玩家不能改变公开历史事件、条约或战争结果，只能改变自己的报告质量、人脉、声誉与职业成长。必须评估证据质量、行动可行性、风险意识和历史认知边界。不得凭空制造机密文件、现代设备或未来知识。输出JSON：{assessment:评估, outcome:任务结果, status:success|partial|failed, experience:0到12整数, trustDelta:-2到3整数, memory:个人履历记忆, nextLead:下一条调查线索}。"
  :"You adjudicate a historical career assignment for a fictional participant. Use only information available in the mission year or earlier. Respect the historical offices, technology, communications, travel, authority and intelligence limits of the period. The player cannot change public historical events, treaties or war outcomes; only their report quality, contacts, reputation and career may change. Evaluate evidence quality, feasibility, risk awareness and historical discipline. Never invent secret files, modern tools or future knowledge. Return JSON {assessment,outcome,status:success|partial|failed,experience:0..12 integer,trustDelta:-2..3 integer,memory,nextLead}.";
  const context={mission:{id:mission.id,year:mission.year,title:mission.title[lang],place:mission.place,briefing:mission.briefing[lang],objective:mission.objective[lang],constraints:mission.constraints[lang],knownFacts:mission.facts},player:{name:clean(p.name,48),career:clean(p.career,50),nation:clean(p.nation,80),city:clean(p.city,80),rank:clean(p.title,60),experience:Number(p.experience)||0,trust:Number(p.trust)||0},careerFocus:focus,plan};
  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
@@ -32,7 +32,10 @@ export async function onRequestPost({request,env}){
   if(!out){
    const plain=clean(raw,2200).trim();
    if(plain.length<20)return json({error:"EMPTY_MODEL_OUTPUT",detail:"MiniMax returned no usable message content.",finishReason:clean(d.choices?.[0]?.finish_reason||"unknown",60)},502);
-   out={assessment:plain,outcome:"模型返回了有效文字，但没有遵循结构化评分格式。系统已采用保守的部分完成判定。",status:"partial",experience:2,trustDelta:0,memory:"提交了战后秩序评估报告；模型未返回结构化评分，按保守规则记录。",nextLead:"补充独立来源、时间与可核查证据后再次评估。"};
+   const detailCount=(plan.match(/[，,。；;：:\n]/g)||[]).length;
+   const hasAction=/(核实|查证|交叉|来源|档案|接触|访问|询问|比较|条款|赔偿|军备|联盟|贸易|经济|安全|外交|证据|报告|报纸|使馆)/.test(plan);
+   const weak=plan.length<45||(!hasAction&&detailCount<2);
+   out={assessment:plain,outcome:weak?"这份答复表达了谨慎态度，但尚未形成可执行的评估方案。缺少具体风险判断、核查对象、信息来源和下一步行动。":"报告内容已记录，但模型未能提供完整结构化评分。系统暂按部分完成处理，不把未明确证明的判断视为事实。",status:"partial",experience:weak?0:2,trustDelta:0,memory:"提交了1919年战后秩序评估；本次按保守规则记录，仍需补充可核查的调查步骤。",nextLead:"分别列出安全、经济和政治风险，并为每项风险指定1919年可接触的独立来源与核查步骤。"};
   }
   return json({ok:true,missionId:mission.id,year:mission.year,assessment:clean(out.assessment,900),outcome:clean(out.outcome,1200),status:["success","partial","failed"].includes(out.status)?out.status:"partial",experience:Math.max(0,Math.min(12,Math.floor(Number(out.experience)||0))),trustDelta:Math.max(-2,Math.min(3,Number(out.trustDelta)||0)),memory:clean(out.memory,700),nextLead:clean(out.nextLead,700),model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash"});
  }catch(e){return json({error:e?.name==="AbortError"?"MODEL_TIMEOUT":"MODEL_UNAVAILABLE",detail:clean(e?.message||"Unknown model error",220)},502)}finally{clearTimeout(timer)}
