@@ -23,7 +23,14 @@ export async function onRequestPost({request,env}){
  try{
   const r=await fetch(env.MINIMAX_BASE_URL||"https://api.minimaxi.com/v1/chat/completions",{method:"POST",signal:ctl.signal,headers:{"Authorization":"Bearer "+env.MINIMAX_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash",messages:[{role:"system",content:system+"\nReturn one valid JSON object only."},{role:"user",content:JSON.stringify(context)}],temperature:.25,max_completion_tokens:2400})});
   if(!r.ok){const body=await r.text();let detail=body.slice(0,320);try{const parsed=JSON.parse(body);detail=parsed.base_resp?.status_msg||parsed.error?.message||parsed.message||detail}catch{}return json({error:"MODEL_UPSTREAM_ERROR",upstreamStatus:r.status,detail},502)}
-  const d=await r.json();if(d.base_resp&&Number(d.base_resp.status_code)!==0)throw Error("provider:"+clean(d.base_resp.status_msg,160));const raw=d.choices?.[0]?.message?.content,m=typeof raw==="string"&&raw.match(/\{[\s\S]*\}/);if(!m)return json({error:"INVALID_MODEL_OUTPUT"},502);
-  const out=JSON.parse(m[0]);return json({ok:true,missionId:mission.id,year:mission.year,assessment:clean(out.assessment,900),outcome:clean(out.outcome,1200),status:["success","partial","failed"].includes(out.status)?out.status:"partial",experience:Math.max(0,Math.min(12,Math.floor(Number(out.experience)||0))),trustDelta:Math.max(-2,Math.min(3,Number(out.trustDelta)||0)),memory:clean(out.memory,700),nextLead:clean(out.nextLead,700),model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash"});
+  const d=await r.json();
+  if(d.base_resp&&Number(d.base_resp.status_code)!==0)return json({error:"MODEL_PROVIDER_ERROR",providerCode:d.base_resp.status_code,detail:clean(d.base_resp.status_msg,220)},502);
+  const raw=d.choices?.[0]?.message?.content;
+  const text=Array.isArray(raw)?raw.map(v=>v.text||"").join(""):String(raw||"");
+  const cleaned=text.replace(/^\x60{3}(?:json)?\s*/i,"").replace(/\s*\x60{3}$/,"").trim();
+  const start=cleaned.indexOf("{"),end=cleaned.lastIndexOf("}");
+  if(start<0||end<=start)return json({error:"INVALID_MODEL_OUTPUT",detail:clean(cleaned.slice(0,240),240)},502);
+  let out;try{out=JSON.parse(cleaned.slice(start,end+1))}catch{return json({error:"INVALID_MODEL_JSON",detail:clean(cleaned.slice(0,240),240)},502)}
+  return json({ok:true,missionId:mission.id,year:mission.year,assessment:clean(out.assessment,900),outcome:clean(out.outcome,1200),status:["success","partial","failed"].includes(out.status)?out.status:"partial",experience:Math.max(0,Math.min(12,Math.floor(Number(out.experience)||0))),trustDelta:Math.max(-2,Math.min(3,Number(out.trustDelta)||0)),memory:clean(out.memory,700),nextLead:clean(out.nextLead,700),model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash"});
  }catch(e){return json({error:e?.name==="AbortError"?"MODEL_TIMEOUT":"MODEL_UNAVAILABLE",detail:clean(e?.message||"Unknown model error",220)},502)}finally{clearTimeout(timer)}
 }
