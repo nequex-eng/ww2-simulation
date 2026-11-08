@@ -4,10 +4,10 @@ Bilingual English / Chinese historical decision simulation prototype.
 
 ## Features
 - U.S. and Imperial Japanese command perspectives
-- Schematic Pacific operational plot
+- Time-responsive Pacific operational plot showing both carrier forces and search coverage (schematic, not to scale)
 - Intelligence reports with confidence labels
 - Command orders with state changes, time advancement, and side-specific consequences
-- Separate friendly and enemy operational carrier counts
+- Separate friendly and enemy operational carrier counts, affected by strike timing, rearming vulnerability, and defensive orders
 - Historical milestone intelligence from 4–7 June, displayed separately from simulated outcomes
 - Local campaign persistence and restoration (browser localStorage)
 - After-action comparison with the historical record
