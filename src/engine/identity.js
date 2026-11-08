@@ -7,7 +7,7 @@ export const CAREERS = {
 };
 export function createIdentity({name="Alex",career="analyst",nation="United Kingdom",city="London"}={}) {
  const c=CAREERS[career]||CAREERS.analyst;
- return {id:"player-"+Date.now(),name:String(name).slice(0,48),career,nation,city,year:1919,rank:0,codename:null,experience:0,trust:10,skills:[...(c.skills||[])],contacts:[],missions:[],memory:[],relationships:{},trainingCompleted:[],createdAt:new Date().toISOString()};
+ return {id:"player-"+Date.now(),name:String(name).slice(0,48),career,nation,city,year:1919,rank:0,codename:null,experience:0,trust:10,skills:[...(c.skills||[])],contacts:[],missions:[],memory:[],relationships:{},characterMemory:{},trainingCompleted:[],createdAt:new Date().toISOString()};
 }
 export function advanceIdentity(identity,{experience=0,trust=0,contact=null,mission=null,figureId=null,relationshipDelta=0}={}) {
  const next={...identity,relationships:{...(identity.relationships||{})},trainingCompleted:[...(identity.trainingCompleted||[])],experience:Math.max(0,(identity.experience||0)+experience),trust:Math.max(0,Math.min(100,(identity.trust||0)+trust)),memory:[...(identity.memory||[])].slice(-11)};
