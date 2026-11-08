@@ -1,5 +1,6 @@
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const clean=(v,n=500)=>String(v??"").replace(/[<>]/g,"").slice(0,n);
+export async function onRequestGet({env}){return json({provider:"MiniMax",ready:Boolean(env.MINIMAX_API_KEY),model:env.MINIMAX_MODEL||"MiniMax-M3",purpose:"campaign-adjudication"});}
 export async function onRequestPost({request,env}){
   if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED",message:"AI model key is not available to this deployment."},503);
   let input;
