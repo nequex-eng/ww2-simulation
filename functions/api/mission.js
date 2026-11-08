@@ -1,6 +1,8 @@
 import {missionById} from "../../shared/missions.js";
 const json=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const clean=(v,n=1400)=>String(v??"").replace(/[<>]/g,"").slice(0,n);
+function contentOf(message){const v=message?.content??message?.reasoning_content??message?.output_text??"";return Array.isArray(v)?v.map(x=>typeof x==="string"?x:x?.text||"").join("\\n"):typeof v==="string"?v:JSON.stringify(v)}
+function parseObject(text){const s=String(text||"").replace(/^\\s*\\x60{3}(?:json)?\\s*/i,"").replace(/\\s*\\x60{3}\\s*$/,"").trim();try{return JSON.parse(s)}catch{}let start=-1,depth=0,quoted=false,escape=false;for(let i=0;i<s.length;i++){const c=s[i];if(start<0){if(c==="{"){start=i;depth=1}continue}if(quoted){if(escape)escape=false;else if(c==="\\\\")escape=true;else if(c==='"')quoted=false;continue}if(c==='"')quoted=true;else if(c==="{")depth++;else if(c==="}"&&--depth===0){try{return JSON.parse(s.slice(start,i+1))}catch{return null}}}return null}
 export async function onRequestPost({request,env}){
  if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED"},503);
  let x;try{const raw=await request.text();if(raw.length>10000)return json({error:"REQUEST_TOO_LARGE"},413);x=JSON.parse(raw)}catch{return json({error:"INVALID_JSON"},400)}
@@ -25,12 +27,13 @@ export async function onRequestPost({request,env}){
   if(!r.ok){const body=await r.text();let detail=body.slice(0,320);try{const parsed=JSON.parse(body);detail=parsed.base_resp?.status_msg||parsed.error?.message||parsed.message||detail}catch{}return json({error:"MODEL_UPSTREAM_ERROR",upstreamStatus:r.status,detail},502)}
   const d=await r.json();
   if(d.base_resp&&Number(d.base_resp.status_code)!==0)return json({error:"MODEL_PROVIDER_ERROR",providerCode:d.base_resp.status_code,detail:clean(d.base_resp.status_msg,220)},502);
-  const raw=d.choices?.[0]?.message?.content;
-  const text=Array.isArray(raw)?raw.map(v=>v.text||"").join(""):String(raw||"");
-  const cleaned=text.replace(/^\x60{3}(?:json)?\s*/i,"").replace(/\s*\x60{3}$/,"").trim();
-  const start=cleaned.indexOf("{"),end=cleaned.lastIndexOf("}");
-  if(start<0||end<=start)return json({error:"INVALID_MODEL_OUTPUT",detail:clean(cleaned.slice(0,240),240)},502);
-  let out;try{out=JSON.parse(cleaned.slice(start,end+1))}catch{return json({error:"INVALID_MODEL_JSON",detail:clean(cleaned.slice(0,240),240)},502)}
+  const raw=contentOf(d.choices?.[0]?.message||d);
+  let out=parseObject(raw);
+  if(!out){
+   const plain=clean(raw,2200).trim();
+   if(plain.length<20)return json({error:"EMPTY_MODEL_OUTPUT",detail:"MiniMax returned no usable message content.",finishReason:clean(d.choices?.[0]?.finish_reason||"unknown",60)},502);
+   out={assessment:plain,outcome:"模型返回了有效文字，但没有遵循结构化评分格式。系统已采用保守的部分完成判定。",status:"partial",experience:2,trustDelta:0,memory:"提交了战后秩序评估报告；模型未返回结构化评分，按保守规则记录。",nextLead:"补充独立来源、时间与可核查证据后再次评估。"};
+  }
   return json({ok:true,missionId:mission.id,year:mission.year,assessment:clean(out.assessment,900),outcome:clean(out.outcome,1200),status:["success","partial","failed"].includes(out.status)?out.status:"partial",experience:Math.max(0,Math.min(12,Math.floor(Number(out.experience)||0))),trustDelta:Math.max(-2,Math.min(3,Number(out.trustDelta)||0)),memory:clean(out.memory,700),nextLead:clean(out.nextLead,700),model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash"});
  }catch(e){return json({error:e?.name==="AbortError"?"MODEL_TIMEOUT":"MODEL_UNAVAILABLE",detail:clean(e?.message||"Unknown model error",220)},502)}finally{clearTimeout(timer)}
 }
