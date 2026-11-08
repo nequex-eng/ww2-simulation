@@ -1,6 +1,6 @@
-# WWII Simulation — Battle of Midway
+# WWII Simulation — Multi-theater historical war simulation
 
-Bilingual English / Chinese historical decision simulation prototype.
+Bilingual English / Chinese historical war simulation platform. Battle of Midway is the first campaign module, not the product boundary.
 
 ## Features
 - U.S. and Imperial Japanese command perspectives
