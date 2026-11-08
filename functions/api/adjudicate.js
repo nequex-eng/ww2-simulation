@@ -24,14 +24,14 @@ export async function onRequestPost({request,env}){
     crew:Math.max(0,Math.min(100,Number(state.crew)||0)),
     search:Math.max(0,Math.min(100,Number(state.search)||0)),
     score:Math.max(-100,Math.min(100,Number(state.score)||0)),
-    turn:Math.max(0,Math.min(100,Number(state.turn)||0))
+    turn:Math.max(0,Math.min(100,Number(state.turn)||0)),\n    contact:Math.max(0,Math.min(100,Number(input.operationalDetail?.contact)||0)),\n    deckCycle:Math.max(0,Math.min(12,Number(input.operationalDetail?.deckCycle)||0)),\n    airborne:Math.max(0,Math.min(500,Number(input.operationalDetail?.airborne)||0)),\n    sorties:Math.max(0,Math.min(100,Number(input.operationalDetail?.sorties)||0)),\n    activeSector:clean(input.operationalDetail?.activeSector,30),\n    sectorCoverage:Array.isArray(input.operationalDetail?.sectorCoverage)?input.operationalDetail.sectorCoverage.slice(0,4).map(v=>Math.max(0,Math.min(100,Number(v)||0))):[]
   };
   const command={id,label:clean(input.command?.label,100),description:clean(input.command?.description,260)};
   const events=Array.isArray(input.recentEvents)?input.recentEvents.slice(0,4).map(x=>clean(x,180)):[];
   const system=lang==="zh"
     ?"你是《中途岛海战》历史决策模拟器的战区参谋。用简体中文写一段简短、沉浸式、符合1942年海战语境的战场反馈，并给出一条新的情报线索。严格遵守：游戏状态数字由程序决定，你绝不能更改、推断或宣称任何舰艇已沉没/受损，除非输入状态或历史节点明确说明；不要虚构精确坐标、舰艇位置、飞机数量或真实电报原文；区分已知事实、估计与不确定情报；不提供现代现实军事行动建议。输出只能是JSON对象：{\"narrative\":\"80至140个汉字的战场反馈\",\"intel\":{\"title\":\"不超过22字\",\"body\":\"40至90个汉字的新情报，明确可信度和不确定性\",\"confidence\":\"高/中/低\"}}。"
     :"You are the operations staff narrator for an educational Battle of Midway decision simulation. Write concise, immersive period-appropriate feedback and one new intelligence lead. Strict rules: program state owns all numbers; never alter it or claim a ship was sunk/damaged unless the input state or historical milestone explicitly says so. Do not invent exact coordinates, ship positions, aircraft counts, or authentic-looking intercepted messages. Distinguish confirmed facts, estimates and uncertainty. Do not provide modern real-world military advice. Output only JSON: {\"narrative\":\"80-140 words of campaign feedback\",\"intel\":{\"title\":\"under 8 words\",\"body\":\"40-90 words of new intelligence with explicit uncertainty\",\"confidence\":\"HIGH/MEDIUM/LOW\"}}.";
-  const user=JSON.stringify({campaign:"Battle of Midway, 3–7 June 1942",side:side==="us"?"United States Navy":"Imperial Japanese Navy",time:bounded.time,command,state:bounded,recentHistoricalContext:events});
+  const user=JSON.stringify({campaign:"Battle of Midway, 3–7 June 1942",side:side==="us"?"United States Navy":"Imperial Japanese Navy",time:bounded.time,command,state:bounded,recentHistoricalContext:events,operationalPicture:{contact:bounded.contact,deckCycleHours:bounded.deckCycle,airborneAircraft:bounded.airborne,sortiesFlown:bounded.sorties,activeSearchSector:bounded.activeSector,sectorCoverage:bounded.sectorCoverage}});
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),18000);
   try{
@@ -57,7 +57,7 @@ export async function onRequestPost({request,env}){
     return json({
       narrative:clean(result.narrative,lang==="zh"?500:900),
       intel:{title:clean(result.intel.title,80),body:clean(result.intel.body,500),confidence:clean(result.intel.confidence,20)},
-      model:env.MINIMAX_MODEL||"MiniMax-M3"
+      model:env.MINIMAX_MODEL||"MiniMax-M3.1-Flash"
     });
   }catch(error){
     return json({error:error?.name==="AbortError"?"MODEL_TIMEOUT":"MODEL_CONNECTION_FAILED",message:"The model request could not be completed."},502);
