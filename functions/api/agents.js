@@ -1,7 +1,6 @@
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const clean=(v,n=800)=>String(v??"").replace(/[<>]/g,"").slice(0,n);
-const sides={us:"United States Navy",jp:"Imperial Japanese Navy"};
-const orders={us:["search","concentrate","strike","hold","defend"],jp:["search","island","rearm","reserve","withdraw"]};
+import {getCampaign} from "../../shared/campaigns.js";
 const schemas={
  interpreter:{action:"one allowed command id",objective:"short objective",confidence:"high|medium|low",clarification:"empty or one short clarification"},
  staff:{assessment:"what is known and unknown",recommendation:"a concise recommendation",risk:"main risk",question:"one question the commander should consider"},
@@ -20,7 +19,7 @@ export async function onRequestGet({env}){return json({ready:Boolean(env.MINIMAX
 export async function onRequestPost({request,env}){
  if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED"},503);
  let input;try{const raw=await request.text();if(raw.length>18000)return json({error:"REQUEST_TOO_LARGE"},413);input=JSON.parse(raw);}catch{return json({error:"INVALID_JSON"},400);}
- const lang=input.lang==="en"?"en":"zh",side=input.side==="jp"?"jp":"us",enemy=side==="us"?"jp":"us";
+ const lang=input.lang==="en"?"en":"zh",side=input.side==="jp"?"jp":"us",enemy=side==="us"?"jp":"us";\n const campaign=getCampaign(clean(input.campaignId,40)||"midway");if(!campaign)return json({error:"UNKNOWN_CAMPAIGN"},404);const sides=campaign.sides,orders=campaign.orders;
  const message=clean(input.message,1200);if(!message.trim())return json({error:"EMPTY_ORDER"},400);
  const state=input.state&&typeof input.state==="object"?input.state:{};
  const knownReports=Array.isArray(input.knownReports)?input.knownReports.slice(0,8).map(x=>({title:clean(x.title,100),body:clean(x.body,350),confidence:clean(x.confidence,20)})):[];
@@ -29,7 +28,7 @@ export async function onRequestPost({request,env}){
  const ownState={clock:state.clock,friendlyCarriers:state.friendlyCarriers,aircraft:state.aircraft,fuel:state.fuel,crew:state.crew,contact:state.contact,deckCycle:state.deckCycle,airborne:state.airborne,sorties:state.sorties,search:state.search};
  const langRule=lang==="zh"?"使用简体中文。":"Use concise English.";
  const [interpreted,staff,opponent]=await Promise.all([
-  ask(env,"interpreter","You are the order interpreter for a historical strategy simulation. Convert the player's natural-language intent into exactly one legal command id from: "+orders[side].join(", ")+". Never invent an action. If the intent is ambiguous, choose the safest matching action and ask one concise clarification. JSON schema: "+JSON.stringify(schemas.interpreter)+". "+langRule,{campaign:"Battle of Midway",side:sides[side],legalOrders:orders[side],playerMessage:message,clock:state.clock,ownKnownState:ownState,memory:memory.playerCommander||[],knownReports}),
+  ask(env,"interpreter","You are the order interpreter for a historical strategy simulation. Convert the player's natural-language intent into exactly one legal command id from: "+orders[side].join(", ")+". Never invent an action. If the intent is ambiguous, choose the safest matching action and ask one concise clarification. JSON schema: "+JSON.stringify(schemas.interpreter)+". "+langRule,{campaign:campaign.name,theater:campaign.theater,period:campaign.period,historicalContext:campaign.historicalContext,side:sides[side],legalOrders:orders[side],playerMessage:message,clock:state.clock,ownKnownState:ownState,memory:memory.playerCommander||[],knownReports}),
   ask(env,"friendly_staff","You are the player's independent operations staff. You do not control the enemy and must not invent facts. Assess uncertainty, challenge weak assumptions, and advise the commander. JSON schema: "+JSON.stringify(schemas.staff)+". "+langRule,{campaign:"Battle of Midway",side:sides[side],clock:state.clock,ownKnownState:ownState,memory:memory.staff||[],knownReports,playerOrder:message,history}),
   ask(env,"enemy_commander","You are the opposing fleet commander in an educational 1942 Battle of Midway simulation. You have your own limited view; you do NOT know the player's hidden resources, unreported plans, or private staff advice. Choose one plausible response: recon, prepare, strike, defend, maneuver, withdraw. Do not narrate omniscient knowledge. JSON schema: "+JSON.stringify(schemas.enemy)+". "+langRule,{campaign:"Battle of Midway",yourSide:sides[enemy],opposingSide:sides[side],clock:state.clock,ownForce:state.enemyView||{},memory:memory.enemyCommander||[],observedPlayerActivity:history.map(x=>({order:x.order,result:x.result})),publicSituation:state.publicSituation||{},knownEnemyReports:state.enemyReports||[]})
  ]);
