@@ -24,7 +24,9 @@ export async function onRequestPost({request,env}){
  const message=clean(input.message,1200);if(!message.trim())return json({error:"EMPTY_ORDER"},400);
  const state=input.state&&typeof input.state==="object"?input.state:{};
  const knownReports=Array.isArray(input.knownReports)?input.knownReports.slice(0,8).map(x=>({title:clean(x.title,100),body:clean(x.body,350),confidence:clean(x.confidence,20)})):[];
- const history=Array.isArray(input.history)?input.history.slice(0,8).map(x=>({side:clean(x.side,20),order:clean(x.order,120),result:clean(x.result,220)})):[];\n const memory=input.agentMemory&&typeof input.agentMemory==="object"?input.agentMemory:{};\n const ownState={clock:state.clock,friendlyCarriers:state.friendlyCarriers,aircraft:state.aircraft,fuel:state.fuel,crew:state.crew,contact:state.contact,deckCycle:state.deckCycle,airborne:state.airborne,sorties:state.sorties,search:state.search};
+ const history=Array.isArray(input.history)?input.history.slice(0,8).map(x=>({side:clean(x.side,20),order:clean(x.order,120),result:clean(x.result,220)})):[];
+ const memory=input.agentMemory&&typeof input.agentMemory==="object"?input.agentMemory:{};
+ const ownState={clock:state.clock,friendlyCarriers:state.friendlyCarriers,aircraft:state.aircraft,fuel:state.fuel,crew:state.crew,contact:state.contact,deckCycle:state.deckCycle,airborne:state.airborne,sorties:state.sorties,search:state.search};
  const langRule=lang==="zh"?"使用简体中文。":"Use concise English.";
  const [interpreted,staff,opponent]=await Promise.all([
   ask(env,"interpreter","You are the order interpreter for a historical strategy simulation. Convert the player's natural-language intent into exactly one legal command id from: "+orders[side].join(", ")+". Never invent an action. If the intent is ambiguous, choose the safest matching action and ask one concise clarification. JSON schema: "+JSON.stringify(schemas.interpreter)+". "+langRule,{campaign:"Battle of Midway",side:sides[side],legalOrders:orders[side],playerMessage:message,clock:state.clock,ownKnownState:ownState,memory:memory.playerCommander||[],knownReports}),
