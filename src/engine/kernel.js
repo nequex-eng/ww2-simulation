@@ -1,7 +1,7 @@
 const clone=value=>JSON.parse(JSON.stringify(value));
 export const ORDER_TYPES = ["recon","prepare","strike","defend","maneuver","wait","withdraw"];
 
-export function createWorldState({campaignId="midway",side="us",clock={day:3,hour:4},forces={},resources={}}={}) {
+export function createWorldState({campaignId="world",side="us",clock={day:3,hour:4},forces={},resources={}}={}) {
   return {
     schemaVersion:1,
     campaignId,
