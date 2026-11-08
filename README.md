@@ -6,7 +6,7 @@ Bilingual historical world simulation beginning with the origins of World War II
 - `src/engine/`: shared simulation kernel and player identity progression.
 - `shared/history.js`: global chronology and historical figure dossiers.
 - `functions/api/character.js`: MiniMax-powered historical character roleplay, bounded by year and figure knowledge.
-- `src/campaigns/midway/`: Midway campaign UI, rules and styling.
+- `src/campaigns/midway/`: Midway campaign UI, rules, manifest and styling.
 - `functions/api/campaigns/midway/`: campaign-specific AI command/adjudication endpoints.
 
 ## Player story
