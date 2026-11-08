@@ -1,7 +1,7 @@
 import {missionById} from "../../shared/missions.js";
 const json=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 const clean=(v,n=1400)=>String(v??"").replace(/[<>]/g,"").slice(0,n);
-function contentOf(message){const v=message?.content??message?.reasoning_content??message?.output_text??"";return Array.isArray(v)?v.map(x=>typeof x==="string"?x:x?.text||"").join(" "):typeof v==="string"?v:JSON.stringify(v)}
+function contentOf(message){const v=message?.content||message?.reasoning_content||message?.output_text||"";return Array.isArray(v)?v.map(x=>typeof x==="string"?x:x?.text||"").join(" "):typeof v==="string"?v:JSON.stringify(v)}
 function parseObject(text){const s=String(text||"").trim();try{return JSON.parse(s)}catch{}const match=s.match(/\{[\s\S]*\}/);if(match){try{return JSON.parse(match[0])}catch{}}return null}
 export async function onRequestPost({request,env}){
  if(!env.MINIMAX_API_KEY)return json({error:"MODEL_NOT_CONFIGURED"},503);
